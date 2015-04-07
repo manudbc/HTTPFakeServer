@@ -565,12 +565,12 @@ class FakeHTTPRequestHandler(SocketServer.StreamRequestHandler):
 
 if __name__ == '__main__':
     header  = "		 _    _ _______ _______ _____  ______    _         _____                            \n"
-	header += "		| |  | |__   __|__   __|  __ \|  ____|  | |       / ____|    Version %s           \n"  % __version__
-	header += "		| |__| |  | |     | |  | |__) | |__ __ _| | _____| (___   ___ _ ____   _____ _ __   \n"
-	header += "		|  __  |  | |     | |  |  ___/|  __/ _` | |/ / _ \\___ \ / _ \ '__\ \ / / _ \ '__|  \n"
-	header += "		| |  | |  | |     | |  | |    | | | (_| |   <  __/____) |  __/ |   \ V /  __/ |     \n"
-	header += "		|_|  |_|  |_|     |_|  |_|    |_|  \__,_|_|\_\___|_____/ \___|_|    \_/ \___|_|     \n"
-	header += "												https://github.com/manudbc/HTTPFakeServer   \n"
+    header += "		| |  | |__   __|__   __|  __ \|  ____|  | |       / ____|    Version %s           \n"  % __version__
+    header += "		| |__| |  | |     | |  | |__) | |__ __ _| | _____| (___   ___ _ ____   _____ _ __   \n"
+    header += "		|  __  |  | |     | |  |  ___/|  __/ _` | |/ / _ \\___ \ / _ \ '__\ \ / / _ \ '__|  \n"
+    header += "		| |  | |  | |     | |  | |    | | | (_| |   <  __/____) |  __/ |   \ V /  __/ |     \n"
+    header += "		|_|  |_|  |_|     |_|  |_|    |_|  \__,_|_|\_\___|_____/ \___|_|    \_/ \___|_|     \n"
+    header += "												https://github.com/manudbc/HTTPFakeServer   \n"
 			
     parser = OptionParser(usage = "HTTPFakeServer.py [options]:\n" + header)
     parser.add_option('-p', '--port', action='store', dest='port', type='int',
