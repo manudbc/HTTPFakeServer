@@ -26,7 +26,7 @@ except ImportError:
     from StringIO import StringIO
 
 PORT=80
-HOST= "0.0.0.0"
+INTERFACE= "0.0.0.0"
 
 DEFAULT_ERROR_MESSAGE = """\
 <head>
@@ -44,6 +44,7 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html"
 
 def _quote_html(html):
     return html.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
 
 class HTTPServer(SocketServer.TCPServer):
 
@@ -146,44 +147,15 @@ class FakeHTTPRequestHandler(SocketServer.StreamRequestHandler):
             self.wfile.flush() #actually send the response if not already done.
         except socket.timeout, e:
             #a read or a write timed out.  Discard this connection
-            self.log_error("Request timed out: %r", e)# log_error de timeout
-            self.close_connection = 1
-            return
-
-    def handle_one_request(self):
-        """Handle a single HTTP request.
-
-        You normally don't need to override this method; see the class
-        __doc__ string for information on how to handle specific HTTP
-        commands such as GET and POST.
-
-        """
-        try:
-            self.raw_requestline = self.rfile.readline(65537)
-            if len(self.raw_requestline) > 65536:
-                self.requestline = ''
-                self.request_version = ''
-                self.command = ''
-                self.send_error(414)
-                return
-            if not self.raw_requestline:
-                self.close_connection = 1
-                return
-            if not self.parse_request():
-                # An error code has been sent, just exit
-                return
-            mname = 'do_' + self.command
-            if not hasattr(self, mname):
-                self.send_error(501, "Unsupported method (%r)" % self.command)
-                return
-            method = getattr(self, mname)
-            method()
-            self.wfile.flush() #actually send the response if not already done.
-        except socket.timeout, e:
-            #a read or a write timed out.  Discard this connection
             self.log_error("Request timed out: %r", e)#log_error de timeout
             self.close_connection = 1
             return
+        except socket.error as socket_error:
+            import errno
+            if socket_error.errno in (errno.ECONNABORTED, errno.WSAECONNABORTED, errno.ECONNRESET, errno.WSAECONNRESET, errno.EPIPE):      
+                pass
+            else:
+                raise
 
     def handle(self):
         """Handle multiple requests if necessary."""
@@ -438,7 +410,7 @@ class FakeHTTPRequestHandler(SocketServer.StreamRequestHandler):
 
     def log_request(self, code='-', size='-'):
         self.log_message('"%s" %s %s',self.requestline, str(code), str(size))
-        print '%s - - [%s] %s\n "%s" %s %s' % (self.client_address[0], self.log_date_time_string(),)
+        #print '%s - - [%s] %s\n "%s" %s %s' % (self.client_address[0], self.log_date_time_string())
         print "-------REQUEST----------"
         for header, value in self.headers.items():
             print "\t" + header + ":", value
@@ -448,11 +420,11 @@ class FakeHTTPRequestHandler(SocketServer.StreamRequestHandler):
         self.log_message(format, *args)
 
     def log_message(self, format, *args):
-        #sys.stderr.write("%s - - [%s] %s\n" %
-        #                 (self.client_address[0],
-        #                  self.log_date_time_string(),
-        #                  format%args))
-        print '%s - - [%s] %s\n' % (self.client_address[0], self.log_date_time_string(),format%args)
+        sys.stderr.write("%s - - [%s] %s\n" %
+                         (self.client_address[0],
+                          self.log_date_time_string(),
+                          format%args))
+        #print '%s - - [%s] %s\n' % (self.client_address[0], self.log_date_time_string(),format%args)
 
     def version_string(self):
         """Return the server software version string."""
@@ -557,35 +529,36 @@ class FakeHTTPRequestHandler(SocketServer.StreamRequestHandler):
 
 
 
-
 #def test(HandlerClass = SimpleHTTPRequestHandler,
 #         ServerClass = BaseHTTPServer.HTTPServer):
 #    BaseHTTPServer.test(HandlerClass, ServerClass)
 
 
 if __name__ == '__main__':
-    header  = "		 _    _ _______ _______ _____  ______    _         _____                            \n"
-    header += "		| |  | |__   __|__   __|  __ \|  ____|  | |       / ____|    Version %s           \n"  % __version__
-    header += "		| |__| |  | |     | |  | |__) | |__ __ _| | _____| (___   ___ _ ____   _____ _ __   \n"
-    header += "		|  __  |  | |     | |  |  ___/|  __/ _` | |/ / _ \\___ \ / _ \ '__\ \ / / _ \ '__|  \n"
-    header += "		| |  | |  | |     | |  | |    | | | (_| |   <  __/____) |  __/ |   \ V /  __/ |     \n"
-    header += "		|_|  |_|  |_|     |_|  |_|    |_|  \__,_|_|\_\___|_____/ \___|_|    \_/ \___|_|     \n"
-    header += "												https://github.com/manudbc/HTTPFakeServer   \n"
+    header  = "  _    _ _______ _______ _____  ______    _         _____                            \n"
+    header += " | |  | |__   __|__   __|  __ \|  ____|  | |       / ____|    Version %s           \n"  % __version__
+    header += " | |__| |  | |     | |  | |__) | |__ __ _| | _____| (___   ___ _ ____   _____ _ __   \n"
+    header += " |  __  |  | |     | |  |  ___/|  __/ _` | |/ / _ \\___ \ / _ \ '__\ \ / / _ \ '__|  \n"
+    header += " | |  | |  | |     | |  | |    | | | (_| |   <  __/____) |  __/ |   \ V /  __/ |     \n"
+    header += " |_|  |_|  |_|     |_|  |_|    |_|  \__,_|_|\_\___|_____/ \___|_|    \_/ \___|_|     \n"
+    header += "				https://github.com/manudbc/HTTPFakeServer   \n"
 			
     parser = OptionParser(usage = "HTTPFakeServer.py [options]:\n" + header)
     parser.add_option('-p', '--port', action='store', dest='port', type='int',
 			default=PORT, help='TCP port number')
-    parser.add_option('-i', '--int', action='store', dest='host',
-                        default=HOST, help='Interface IP listening')
+    parser.add_option('-i', '--int', action='store', dest='interface',
+                        default=INTERFACE, help='Interface IP listening')
     (options, arguments) = parser.parse_args()
     
-    server_address = (options.host, int(options.port))
+    server_address = (options.interface, int(options.port))
 
     httpd = HTTPServer(server_address, FakeHTTPRequestHandler)
 
     sa = httpd.socket.getsockname()
-    print "Serving HTTP on", sa[0], "port", int(options.port), "..."    
+    print header
+    print "Serving HTTP on", options.interface, "port", int(options.port), "..."    
     try:    
         httpd.serve_forever()
     except KeyboardInterrupt:
-        httpd.server_close()
+        print "clossing"
+        httpd.shutdown()
